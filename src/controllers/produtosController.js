@@ -64,14 +64,29 @@ const patchQuantidadeProduto = async (req, res) => {
     const { quantidade } = req.body;
 
     try {
-        const result = await pool.query(
-            'UPDATE tb_produtos SET quantidade = $1 WHERE id = $2 RETURNING *',
-            [quantidade, id]
+        // Primeiro, busca o produto atual
+        const produtoAtual = await pool.query(
+            'SELECT quantidade FROM tb_produtos WHERE id = $1',
+            [id]
         );
 
-        if (result.rows.length === 0) {
+        if (produtoAtual.rows.length === 0) {
             return res.status(404).json({ error: 'Produto não encontrado' });
         }
+
+        const quantidadeAtual = produtoAtual.rows[0].quantidade;
+        const novaQuantidade = quantidadeAtual + quantidade;
+
+        // Impede que a quantidade fique negativa no banco
+        if (novaQuantidade < 0) {
+            return res.status(400).json({ error: 'Quantidade final não pode ser negativa' });
+        }
+
+        // Atualiza a quantidade
+        const result = await pool.query(
+            'UPDATE tb_produtos SET quantidade = $1 WHERE id = $2 RETURNING *',
+            [novaQuantidade, id]
+        );
 
         res.status(200).json(result.rows[0]);
     } catch (error) {
@@ -79,6 +94,7 @@ const patchQuantidadeProduto = async (req, res) => {
         res.status(500).json({ error: 'Erro ao atualizar a quantidade do produto' });
     }
 };
+
 
 const deleteProduto = async (req, res) => {
     const { id } = req.params;
