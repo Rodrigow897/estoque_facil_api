@@ -4,6 +4,19 @@ const addProduto = async (req, res) =>{
     const { nome, descricao, preco, quantidade } = req.body;
 
     try {
+
+        if (!nome || !descricao || preco == null || quantidade == null) {
+            return res.status(400).json({ error: 'todos os campos são obrigatorios'})
+        }
+
+        if (typeof preco !== 'number' || typeof quantidade !== 'number') {
+            return res.status(400).json({ error: 'preço e quantidade devem ser números' });
+        }
+
+        if (preco < 0 || quantidade < 0) {
+            return res.status(400).json({ error: 'preço e quantidade não podem ser negativos' });
+        }
+
         const result = await pool.query(
             'INSERT INTO tb_produtos (nome, descricao, preco, quantidade) VALUES ($1, $2, $3, $4) RETURNING *',
             [nome, descricao, preco, quantidade]
@@ -45,6 +58,19 @@ const updateProduto = async (req, res) => {
     const { nome, descricao, preco, quantidade } = req.body;
 
     try {
+
+        if (!nome || !descricao || preco == null || quantidade == null) {
+            return res.status(400).json({ error: 'todos os campos são obrigatorios'})
+        }
+
+        if (typeof preco !== 'number' || typeof quantidade !== 'number') {
+            return res.status(400).json({ error: 'preço e quantidade devem ser números' });
+        }
+
+        if (preco < 0 || quantidade < 0) {
+            return res.status(400).json({ error: 'preço e quantidade não podem ser negativos' });
+        }
+
         const result = await pool.query(
             'UPDATE tb_produtos SET nome = $1, descricao = $2, preco = $3, quantidade = $4 WHERE id = $5 RETURNING *',
             [nome, descricao, preco, quantidade, id]
@@ -64,6 +90,10 @@ const patchQuantidadeProduto = async (req, res) => {
     const { quantidade } = req.body;
 
     try {
+
+        if (!Number.isInteger(quantidade) || quantidade == null) {
+            return res.status(400).json({ error: 'Quantidade deve ser um número' });
+        }
         // Primeiro, busca o produto atual
         const produtoAtual = await pool.query(
             'SELECT quantidade FROM tb_produtos WHERE id = $1',
